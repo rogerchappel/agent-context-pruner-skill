@@ -1,0 +1,3 @@
+{"role":"user","content":"Decision: use fixture-backed tests for markdown and JSONL."}
+{"role":"tool","content":"download progress 10% 20% 30%"}
+{"role":"assistant","content":"Blocked until the package smoke command passes."}
