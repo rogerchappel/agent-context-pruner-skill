@@ -3,11 +3,11 @@ export function parseTranscript(raw, source = '<input>') {
   if (!text) {
     return { source, format: 'empty', messages: [] };
   }
-  if (text.startsWith('[') || text.startsWith('{')) {
-    return parseJsonTranscript(text, source);
-  }
   if (looksLikeJsonl(text)) {
     return parseJsonlTranscript(text, source);
+  }
+  if (text.startsWith('[') || text.startsWith('{')) {
+    return parseJsonTranscript(text, source);
   }
   return parseMarkdownTranscript(raw, source);
 }
