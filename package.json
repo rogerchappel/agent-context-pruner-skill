@@ -1,0 +1,34 @@
+{
+  "name": "agent-context-pruner-skill",
+  "version": "0.1.0",
+  "description": "Local-first agent skill for pruning long transcripts into safe continuation briefs.",
+  "type": "module",
+  "bin": {
+    "agent-context-pruner": "./bin/agent-context-pruner.js"
+  },
+  "files": [
+    "bin",
+    "src",
+    "docs",
+    "SKILL.md",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check bin/agent-context-pruner.js && node --check src/*.js && node --check test/*.test.js",
+    "build": "node scripts/build-check.mjs",
+    "smoke": "node bin/agent-context-pruner.js test/fixtures/transcript.md --format markdown --max-items 8"
+  },
+  "keywords": [
+    "agent-skill",
+    "transcript",
+    "context-pruning",
+    "redaction",
+    "handoff"
+  ],
+  "author": "Roger Chappel",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}
