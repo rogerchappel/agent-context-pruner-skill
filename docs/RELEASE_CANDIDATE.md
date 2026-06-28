@@ -6,13 +6,13 @@ Initial public build for `agent-context-pruner-skill`.
 
 ## Verification
 
-To be filled by the release-candidate PR:
+Recorded on 2026-06-28:
 
-- `npm test`
-- `npm run check`
-- `npm run build`
-- `npm run smoke`
+- `npm test` passed, 4 tests
+- `npm run check` passed syntax checks for CLI, src, and tests
+- `npm run build` passed, 11 required files present
+- `npm run smoke` passed and produced a markdown pruning report from `test/fixtures/transcript.md`
 
 ## Classification
 
-ship, pending release-candidate verification.
+ship.
