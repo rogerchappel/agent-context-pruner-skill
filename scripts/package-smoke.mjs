@@ -15,7 +15,9 @@ const required = [
   "docs/RELEASE_CANDIDATE.md",
   "SKILL.md",
   "README.md",
-  "LICENSE"
+  "LICENSE",
+  "SECURITY.md",
+  "CHANGELOG.md"
 ];
 const missing = required.filter((file) => !files.has(file));
 
