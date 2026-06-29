@@ -11,13 +11,16 @@
     "src",
     "docs",
     "SKILL.md",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "test": "node --test",
     "check": "node --check bin/agent-context-pruner.js && node --check src/*.js && node --check test/*.test.js",
     "build": "node scripts/build-check.mjs",
-    "smoke": "node bin/agent-context-pruner.js test/fixtures/transcript.md --format markdown --max-items 8"
+    "smoke": "node bin/agent-context-pruner.js test/fixtures/transcript.md --format markdown --max-items 8",
+    "package:smoke": "node scripts/package-smoke.mjs",
+    "release:check": "npm run check && npm test && npm run build && npm run smoke && npm run package:smoke"
   },
   "keywords": [
     "agent-skill",
@@ -28,6 +31,14 @@
   ],
   "author": "Roger Chappel",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rogerchappel/agent-context-pruner-skill.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rogerchappel/agent-context-pruner-skill/issues"
+  },
+  "homepage": "https://github.com/rogerchappel/agent-context-pruner-skill#readme",
   "engines": {
     "node": ">=18"
   }
