@@ -50,4 +50,19 @@ npm test
 npm run check
 npm run build
 npm run smoke
+npm run package:smoke
+npm run release:check
 ```
+
+## Release Readiness
+
+Before publishing, run `npm run release:check` and review the dry-run package
+contents printed by `npm run package:smoke`. The package should include the CLI,
+library modules, skill instructions, fixtures, release notes, and security
+policy.
+
+## Security
+
+See [SECURITY.md](SECURITY.md) for supported versions and vulnerability
+reporting guidance. Keep real transcripts, secrets, and customer data out of
+public issues and fixtures.
