@@ -7,7 +7,7 @@ Local-first CLI and skill instructions for turning long agent transcripts into c
 ```bash
 npm install
 npm run smoke
-node bin/agent-context-pruner.js test/fixtures/transcript.md --format json
+node bin/agent-context-pruner.js examples/transcript.md --format json
 ```
 
 ## CLI
@@ -25,7 +25,7 @@ Supported inputs:
 ## Example
 
 ```bash
-node bin/agent-context-pruner.js test/fixtures/transcript.md --format markdown --max-items 8
+node bin/agent-context-pruner.js examples/transcript.md --format markdown --max-items 8
 ```
 
 The report includes counts, per-message classifications, redaction findings, and a continuation prompt guardrail.
@@ -58,8 +58,8 @@ npm run release:check
 
 Before publishing, run `npm run release:check` and review the dry-run package
 contents printed by `npm run package:smoke`. The package should include the CLI,
-library modules, skill instructions, fixtures, release notes, and security
-policy.
+library modules, skill instructions, runnable examples, release notes, and
+security policy.
 
 ## Security
 

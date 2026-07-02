@@ -10,3 +10,5 @@ All notable changes to this project will be documented in this file.
   package dry-run verification.
 - Documents local-only operation, heuristic redaction limits, and review
   expectations for generated continuation briefs.
+- Adds a published example transcript so README smoke commands work from the
+  npm package contents instead of relying on unpublished test fixtures.
