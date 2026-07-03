@@ -37,6 +37,19 @@ The report includes counts, per-message classifications, redaction findings, and
 - Redaction detection is heuristic. Review `redact` and `verify` items manually before continuing a live agent.
 - Do not use the generated brief as approval for connector writes or external account actions.
 
+
+## Verification
+
+Run the local quality gates before opening a pull request:
+
+```sh
+npm run lint
+npm test
+npm run smoke
+```
+
+`npm run lint` is an alias for the repository static check so contributors can use the common npm workflow without guessing the project-specific command.
+
 ## Limitations
 
 - No model summarization is used.
