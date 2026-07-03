@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
@@ -35,4 +36,10 @@ test('handles empty input', () => {
   const report = pruneTranscript(parseTranscript('   '));
   assert.equal(report.counts.total, 0);
   assert.deepEqual(report.continuationBrief.keep, []);
+});
+
+test('prints the package version', () => {
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
+  const output = execFileSync('node', ['bin/agent-context-pruner.js', '--version'], { encoding: 'utf8' });
+  assert.equal(output.trim(), packageJson.version);
 });

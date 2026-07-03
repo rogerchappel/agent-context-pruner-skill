@@ -11,12 +11,19 @@ Creates a local pruning report for an agent transcript. Input may be markdown,
 JSON message arrays, or JSONL message logs. No network calls are made.`;
 }
 
+function packageVersion() {
+  const packageJson = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+  return packageJson.version;
+}
+
 function parseArgs(argv) {
   const args = { file: null, format: 'json', maxItems: 12 };
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--help' || value === '-h') {
       args.help = true;
+    } else if (value === '--version' || value === '-v') {
+      args.version = true;
     } else if (value === '--format') {
       args.format = argv[index + 1] || 'json';
       index += 1;
@@ -40,6 +47,10 @@ function parseArgs(argv) {
 
 try {
   const args = parseArgs(process.argv.slice(2));
+  if (args.version) {
+    console.log(packageVersion());
+    process.exit(0);
+  }
   if (args.help) {
     console.log(usage());
     process.exit(0);
