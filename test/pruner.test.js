@@ -40,6 +40,13 @@ test('handles empty input', () => {
   assert.deepEqual(report.continuationBrief.keep, []);
 });
 
+test('prints usage help', () => {
+  const output = execFileSync('node', ['bin/agent-context-pruner.js', '--help'], { encoding: 'utf8' });
+  assert.match(output, /Usage: agent-context-pruner/);
+  assert.match(output, /--format json\|markdown/);
+  assert.match(output, /--max-items n/);
+});
+
 test('prints the package version', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
   const output = execFileSync('node', ['bin/agent-context-pruner.js', '--version'], { encoding: 'utf8' });

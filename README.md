@@ -7,6 +7,7 @@ Local-first CLI and skill instructions for turning long agent transcripts into c
 ```bash
 npm install
 npm run smoke
+node bin/agent-context-pruner.js --help
 node bin/agent-context-pruner.js examples/transcript.md --format json
 ```
 

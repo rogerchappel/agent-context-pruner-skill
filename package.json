@@ -22,7 +22,7 @@
     "check": "node --check bin/agent-context-pruner.js && node --check src/*.js && node --check test/*.test.js",
     "lint": "node --check bin/agent-context-pruner.js && node --check src/*.js && node --check test/*.test.js",
     "test": "node --test",
-    "smoke": "node bin/agent-context-pruner.js --version && node bin/agent-context-pruner.js examples/transcript.md --format markdown --max-items 8",
+    "smoke": "node bin/agent-context-pruner.js --help && node bin/agent-context-pruner.js --version && node bin/agent-context-pruner.js examples/transcript.md --format markdown --max-items 8",
     "package:smoke": "node scripts/package-smoke.mjs",
     "release:check": "npm run check && npm test && npm run build && npm run smoke && npm run package:smoke"
   },
