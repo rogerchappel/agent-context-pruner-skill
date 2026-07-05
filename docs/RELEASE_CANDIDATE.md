@@ -13,6 +13,15 @@ Recorded on 2026-06-28:
 - `npm run build` passed, 11 required files present
 - `npm run smoke` passed and produced a markdown pruning report from `test/fixtures/transcript.md`
 
+Recorded on 2026-07-05:
+
+- Fixed message index propagation in the pruner classifier and added a JSON transcript regression assertion.
+- `bash scripts/validate.sh` passed:
+  - `npm test` passed, 4 tests
+  - `npm run check` passed syntax checks for CLI, src, and tests
+  - `npm run build` passed, 11 required files present
+  - `npm run smoke` passed and produced a markdown pruning report from `test/fixtures/transcript.md`
+
 ## Classification
 
 ship.

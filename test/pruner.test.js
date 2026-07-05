@@ -29,6 +29,8 @@ test('parses JSON message arrays', () => {
   ])));
   assert.equal(report.counts.total, 2);
   assert.equal(report.items[0].action, 'keep');
+  assert.equal(report.items[0].index, 0);
+  assert.equal(report.items[1].index, 1);
 });
 
 test('handles empty input', () => {
