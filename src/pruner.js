@@ -11,7 +11,7 @@ const SIGNALS = [
 
 export function pruneTranscript(transcript, options = {}) {
   const maxItems = options.maxItems || 12;
-  const items = transcript.messages.map((message) => classifyMessage(message));
+  const items = transcript.messages.map((message, index) => classifyMessage(message, index));
   const keepers = items
     .filter((item) => ['keep', 'verify', 'redact'].includes(item.action))
     .sort((a, b) => b.score - a.score)
