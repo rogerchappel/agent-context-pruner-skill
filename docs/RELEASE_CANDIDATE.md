@@ -22,6 +22,11 @@ Recorded on 2026-07-05:
   - `npm run build` passed, 11 required files present
   - `npm run smoke` passed and produced a markdown pruning report from `test/fixtures/transcript.md`
 
+Recorded on 2026-07-06:
+
+- `npm run release:check` passed locally, including syntax checks, 6 node:test cases, build-file verification, CLI help/version/example smoke, and package smoke.
+- Added a GitHub Actions release gate for pull requests and pushes to `main` on Node.js 20 and 22.
+
 ## Classification
 
 ship.
