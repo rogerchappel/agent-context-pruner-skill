@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
-import { toMarkdownReport } from '../src/reporters.js';
+import { toJsonReport, toMarkdownReport } from '../src/reporters.js';
 
 test('parses markdown and flags keep, verify, and redact items', () => {
   const raw = readFileSync('test/fixtures/transcript.md', 'utf8');
@@ -32,6 +32,22 @@ test('parses JSON message arrays', () => {
   assert.equal(report.items[0].action, 'keep');
   assert.equal(report.items[0].index, 0);
   assert.equal(report.items[1].index, 1);
+});
+
+test('redacts sk-proj secrets from JSON and Markdown reports', () => {
+  const secret = 'sk-proj-abcdefghijklmnopqrstuv';
+  const report = pruneTranscript(parseTranscript(JSON.stringify([
+    { role: 'user', content: `Token ${secret} should be redacted` }
+  ])));
+  const outputs = [toJsonReport(report), toMarkdownReport(report)];
+
+  assert.equal(report.counts.redact, 1);
+  assert.equal(report.items[0].action, 'redact');
+  assert.deepEqual(report.items[0].findings.map((finding) => finding.kind), ['secret']);
+  for (const output of outputs) {
+    assert.doesNotMatch(output, new RegExp(secret));
+    assert.match(output, /\[REDACTED:secret\]/);
+  }
 });
 
 test('handles empty input', () => {
