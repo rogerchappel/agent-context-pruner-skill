@@ -4,6 +4,7 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
+import { findSensitiveSpans, redactText } from '../src/redaction.js';
 import { toJsonReport, toMarkdownReport } from '../src/reporters.js';
 
 test('parses markdown and flags keep, verify, and redact items', () => {
@@ -47,6 +48,58 @@ test('redacts sk-proj secrets from JSON and Markdown reports', () => {
   for (const output of outputs) {
     assert.doesNotMatch(output, new RegExp(secret));
     assert.match(output, /\[REDACTED:secret\]/);
+  }
+});
+
+test('redacts legacy sk secrets from JSON and Markdown reports', () => {
+  const secret = 'sk-abcdefghijklmnopqrstuvwx';
+  const report = pruneTranscript(parseTranscript(JSON.stringify([
+    { role: 'user', content: `Decision: token ${secret}` }
+  ])));
+  const outputs = [toJsonReport(report), toMarkdownReport(report)];
+
+  assert.equal(report.counts.redact, 1);
+  assert.equal(report.items[0].action, 'redact');
+  assert.deepEqual(report.items[0].findings.map((finding) => finding.kind), ['secret']);
+  assert.doesNotMatch(JSON.stringify(report.items[0].findings), new RegExp(secret));
+  for (const output of outputs) {
+    assert.doesNotMatch(output, new RegExp(secret));
+    assert.match(output, /\[REDACTED:secret\]/);
+  }
+});
+
+test('recognizes documented provider token shapes without retaining full values', () => {
+  const tokens = [
+    'sk-abcdefghijklmnopqrstuvwx',
+    'sk-proj-abcdefghijklmnopqrstuv',
+    'sk_test_example_should_redact',
+    'ghp_abcdefghijklmnop',
+    'gho_abcdefghijklmnop',
+    'xoxb_abcdefghijklmnop',
+    'xoxp_abcdefghijklmnop'
+  ];
+
+  for (const token of tokens) {
+    const findings = findSensitiveSpans(`Token: ${token}`);
+    assert.deepEqual(findings.map((finding) => finding.kind), ['secret']);
+    assert.doesNotMatch(JSON.stringify(findings), new RegExp(token));
+    assert.equal(redactText(`Token: ${token}`), 'Token: [REDACTED:secret]');
+  }
+});
+
+test('does not redact benign secret-shaped prose or short lookalikes', () => {
+  const benignValues = [
+    'sk-this-is-ordinary-hyphenated-prose',
+    'sk-abcdefghijklmnopqrstuvwx-example',
+    'sk-short',
+    'ask-abcdefghijklmnopqrstuvwx',
+    'ghp_short',
+    'xoxb_not-a-token'
+  ];
+
+  for (const value of benignValues) {
+    assert.deepEqual(findSensitiveSpans(value), []);
+    assert.equal(redactText(value), value);
   }
 });
 

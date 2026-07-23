@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 - Add release-readiness checks for package metadata, pack contents, and CI verification.
+- Redact legacy OpenAI `sk-...` keys and document the provider-token families
+  covered by the heuristic scanner.
 All notable changes to this project will be documented in this file.
 
 ## 0.1.0 - 2026-06-29

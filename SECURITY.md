@@ -26,3 +26,8 @@ This tool reads local transcript files and writes reports to stdout. Security
 reports are most useful when they involve unintended file access, disclosure of
 redacted content, unsafe package contents, or CLI behavior that could mislead a
 user into treating heuristic output as an approval.
+
+Secret redaction includes common provider-token shapes: OpenAI `sk-...` and
+`sk-proj-...`, underscore-delimited `sk_...`, GitHub `ghp_...` and `gho_...`,
+and Slack `xoxb_...` and `xoxp_...`. These heuristics are deliberately limited,
+not an exhaustive credential scanner; review generated reports before reuse.
