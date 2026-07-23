@@ -50,6 +50,23 @@ test('redacts sk-proj secrets from JSON and Markdown reports', () => {
   }
 });
 
+test('redacts legacy sk secrets from JSON and Markdown reports', () => {
+  const secret = 'sk-abcdefghijklmnopqrstuvwx';
+  const report = pruneTranscript(parseTranscript(JSON.stringify([
+    { role: 'user', content: `Decision: token ${secret}` }
+  ])));
+  const outputs = [toJsonReport(report), toMarkdownReport(report)];
+
+  assert.equal(report.counts.redact, 1);
+  assert.equal(report.items[0].action, 'redact');
+  assert.deepEqual(report.items[0].findings.map((finding) => finding.kind), ['secret']);
+  assert.doesNotMatch(JSON.stringify(report.items[0].findings), new RegExp(secret));
+  for (const output of outputs) {
+    assert.doesNotMatch(output, new RegExp(secret));
+    assert.match(output, /\[REDACTED:secret\]/);
+  }
+});
+
 test('handles empty input', () => {
   const report = pruneTranscript(parseTranscript('   '));
   assert.equal(report.counts.total, 0);
