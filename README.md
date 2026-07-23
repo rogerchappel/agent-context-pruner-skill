@@ -55,7 +55,10 @@ npm run smoke
 
 - No model summarization is used.
 - Very large transcripts should be chunked before running the MVP.
-- Secret detection favors common token shapes and may miss domain-specific credentials.
+- Provider-token heuristics cover OpenAI `sk-...` and `sk-proj-...` shapes,
+  underscore-delimited `sk_...`, GitHub `ghp_...` and `gho_...`, and Slack
+  `xoxb_...` and `xoxp_...` shapes. Detection is not exhaustive and may miss
+  domain-specific credentials.
 
 ## Development
 
