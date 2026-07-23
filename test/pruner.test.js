@@ -90,6 +90,7 @@ test('recognizes documented provider token shapes without retaining full values'
 test('does not redact benign secret-shaped prose or short lookalikes', () => {
   const benignValues = [
     'sk-this-is-ordinary-hyphenated-prose',
+    'sk-abcdefghijklmnopqrstuvwx-example',
     'sk-short',
     'ask-abcdefghijklmnopqrstuvwx',
     'ghp_short',
