@@ -1,5 +1,5 @@
 const PATTERNS = [
-  { kind: 'secret', pattern: /\b(?:sk-proj-[A-Za-z0-9_-]{20,}|(?:sk|ghp|gho|xoxb|xoxp)_[A-Za-z0-9_=-]{12,})\b/g },
+  { kind: 'secret', pattern: /\b(?:sk-(?:proj-[A-Za-z0-9_-]{20,}|[A-Za-z0-9]{20,})|(?:sk|ghp|gho|xoxb|xoxp)_[A-Za-z0-9_=-]{12,})\b/g },
   { kind: 'aws_key', pattern: /\bAKIA[0-9A-Z]{16}\b/g },
   { kind: 'email', pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi },
   { kind: 'phone', pattern: /\b(?:\+?\d[\d .()-]{8,}\d)\b/g },
