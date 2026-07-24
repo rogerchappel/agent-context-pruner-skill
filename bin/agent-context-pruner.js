@@ -18,6 +18,14 @@ function packageVersion() {
 
 function parseArgs(argv) {
   const args = { file: null, format: 'json', maxItems: 12 };
+  const optionValue = (index, option) => {
+    const value = argv[index + 1];
+    if (value === undefined || value.startsWith('-')) {
+      throw new Error(`${option} requires a value`);
+    }
+    return value;
+  };
+
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--help' || value === '-h') {
@@ -25,11 +33,13 @@ function parseArgs(argv) {
     } else if (value === '--version' || value === '-v') {
       args.version = true;
     } else if (value === '--format') {
-      args.format = argv[index + 1] || 'json';
+      args.format = optionValue(index, value);
       index += 1;
     } else if (value === '--max-items') {
-      args.maxItems = Number(argv[index + 1]);
+      args.maxItems = Number(optionValue(index, value));
       index += 1;
+    } else if (value.startsWith('-')) {
+      throw new Error(`Unknown option: ${value}`);
     } else if (!args.file) {
       args.file = value;
     } else {

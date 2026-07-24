@@ -20,8 +20,16 @@ agent-context-pruner <input-file> [--format json|markdown] [--max-items n]
 Supported inputs:
 
 - Markdown notes or transcripts
-- JSON arrays or objects with `messages`/`items`
+- JSON arrays of message objects
+- JSON objects with a `messages` or `items` array of message objects
 - JSONL logs with one message object per line
+
+Each JSON message must be an object. Scalar rows such as strings, numbers, or
+`null` are rejected with the row number so malformed exports can be corrected
+without silently losing content.
+
+`--format` and `--max-items` require explicit values. Unknown options are
+rejected rather than treated as input filenames.
 
 ## Example
 

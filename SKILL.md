@@ -4,7 +4,8 @@ Use this skill when an agent needs to continue from a long transcript, automatio
 
 ## Required Inputs
 
-- A local markdown, JSON, or JSONL transcript file
+- A local markdown transcript, a JSON array/object containing message objects,
+  or a JSONL file with one message object per line
 - The desired report format, either `json` or `markdown`
 
 ## Tools
@@ -29,6 +30,15 @@ Human approval is required before copying any continuation brief into a live age
 ```bash
 npx agent-context-pruner-skill test/fixtures/transcript.md --format markdown
 ```
+
+The CLI grammar is:
+
+```text
+agent-context-pruner <input-file> [--format json|markdown] [--max-items n]
+```
+
+Both options require an explicit value, and `--max-items` must be a positive
+integer.
 
 ## Validation
 
