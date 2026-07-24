@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
@@ -33,6 +33,36 @@ test('parses JSON message arrays', () => {
   assert.equal(report.items[0].action, 'keep');
   assert.equal(report.items[0].index, 0);
   assert.equal(report.items[1].index, 1);
+});
+
+test('parses JSON objects with messages or items arrays', () => {
+  const messages = parseTranscript('{"messages":[{"role":"user","content":"Keep this"}]}');
+  const items = parseTranscript('{"items":[{"role":"assistant","text":"And this"}]}');
+
+  assert.equal(messages.messages[0].content, 'Keep this');
+  assert.equal(items.messages[0].content, 'And this');
+});
+
+test('rejects JSON objects without a message array', () => {
+  for (const input of ['{}', '{"metadata":{"count":4}}']) {
+    assert.throws(
+      () => parseTranscript(input),
+      { message: 'JSON transcript object must contain a messages or items array' }
+    );
+  }
+});
+
+test('rejects unsupported JSON and JSONL message rows with stable errors', () => {
+  const cases = [
+    ['{"messages":[null]}', /JSON transcript row 1 must be an object/],
+    ['{"messages":[42]}', /JSON transcript row 1 must be an object/],
+    ['{"messages":["text"]}', /JSON transcript row 1 must be an object/],
+    ['{"role":"user"}\nnull', /JSONL transcript row 2 must be an object/]
+  ];
+
+  for (const [input, expected] of cases) {
+    assert.throws(() => parseTranscript(input), expected);
+  }
 });
 
 test('redacts sk-proj secrets from JSON and Markdown reports', () => {
@@ -120,4 +150,29 @@ test('prints the package version', () => {
   const packageJson = JSON.parse(readFileSync('package.json', 'utf8'));
   const output = execFileSync('node', ['bin/agent-context-pruner.js', '--version'], { encoding: 'utf8' });
   assert.equal(output.trim(), packageJson.version);
+});
+
+test('requires values for CLI options', () => {
+  for (const option of ['--format', '--max-items']) {
+    const result = spawnSync('node', ['bin/agent-context-pruner.js', 'examples/transcript.md', option], {
+      encoding: 'utf8'
+    });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, new RegExp(`${option} requires a value`));
+    assert.equal(result.stdout, '');
+  }
+});
+
+test('rejects unknown CLI options consistently', () => {
+  for (const args of [
+    ['--unknown'],
+    ['examples/transcript.md', '--unknown']
+  ]) {
+    const result = spawnSync('node', ['bin/agent-context-pruner.js', ...args], { encoding: 'utf8' });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, /Unknown option: --unknown/);
+    assert.equal(result.stdout, '');
+  }
 });
