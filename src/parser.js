@@ -14,14 +14,24 @@ export function parseTranscript(raw, source = '<input>') {
 
 function parseJsonTranscript(text, source) {
   const parsed = JSON.parse(text);
-  const rows = Array.isArray(parsed) ? parsed : parsed.messages || parsed.items || [];
-  if (!Array.isArray(rows)) {
-    throw new Error('JSON transcript must be an array or contain messages/items array');
+  let rows;
+  if (Array.isArray(parsed)) {
+    rows = parsed;
+  } else if (parsed && typeof parsed === 'object') {
+    rows = parsed.messages ?? parsed.items;
+    if (rows === undefined) {
+      throw new Error('JSON transcript object must contain a messages or items array');
+    }
+    if (!Array.isArray(rows)) {
+      throw new Error('JSON transcript messages/items value must be an array');
+    }
+  } else {
+    throw new Error('JSON transcript must be an array or object with a messages/items array');
   }
   return {
     source,
     format: 'json',
-    messages: rows.map((row, index) => normalizeMessage(row, index))
+    messages: rows.map((row, index) => normalizeMessage(row, index, 'JSON transcript'))
   };
 }
 
@@ -30,7 +40,7 @@ function parseJsonlTranscript(text, source) {
   return {
     source,
     format: 'jsonl',
-    messages: rows.map((row, index) => normalizeMessage(row, index))
+    messages: rows.map((row, index) => normalizeMessage(row, index, 'JSONL transcript'))
   };
 }
 
@@ -49,9 +59,9 @@ function parseMarkdownTranscript(raw, source) {
   };
 }
 
-function normalizeMessage(row, index) {
-  if (typeof row === 'string') {
-    return { id: `m${index + 1}`, role: 'note', content: row };
+function normalizeMessage(row, index, context) {
+  if (!row || typeof row !== 'object' || Array.isArray(row)) {
+    throw new Error(`${context} row ${index + 1} must be an object`);
   }
   return {
     id: String(row.id || row.message_id || `m${index + 1}`),
@@ -64,7 +74,15 @@ function normalizeMessage(row, index) {
 function looksLikeJsonl(text) {
   const lines = text.split(/\r?\n/).filter(Boolean);
   if (lines.length < 2) return false;
-  return lines.every((line) => line.trim().startsWith('{') && line.trim().endsWith('}'));
+  if (!lines[0].trim().startsWith('{')) return false;
+  return lines.every((line) => {
+    try {
+      JSON.parse(line);
+      return true;
+    } catch {
+      return false;
+    }
+  });
 }
 
 function inferRole(content) {
