@@ -28,7 +28,7 @@ Human approval is required before copying any continuation brief into a live age
 ## Example
 
 ```bash
-npx agent-context-pruner-skill test/fixtures/transcript.md --format markdown
+node bin/agent-context-pruner.js examples/transcript.md --format markdown
 ```
 
 The CLI grammar is:
