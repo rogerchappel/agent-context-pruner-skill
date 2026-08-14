@@ -28,6 +28,21 @@ Each JSON message must be an object. Scalar rows such as strings, numbers, or
 `null` are rejected with the row number so malformed exports can be corrected
 without silently losing content.
 
+Markdown entries may start with ATX headings (`## User`) or bold role labels
+(`**Assistant:**`), and entries without those delimiters are separated by a
+blank line. These boundary styles can be mixed; for example:
+
+```markdown
+## User
+Keep the stable API.
+
+Tool: package metadata inspected
+**Assistant:** Run the release checks next.
+```
+
+A blank line therefore starts a new entry rather than a second paragraph in
+the preceding entry.
+
 `--format` and `--max-items` require explicit values. Unknown options are
 rejected rather than treated as input filenames.
 
