@@ -176,3 +176,38 @@ test('rejects unknown CLI options consistently', () => {
     assert.equal(result.stdout, '');
   }
 });
+
+test('rejects repeated value options before reading the input', () => {
+  const cases = [
+    [['missing-transcript.md', '--format', 'json', '--format', 'markdown'], /--format may only be specified once/],
+    [['missing-transcript.md', '--max-items', '1', '--max-items', '3'], /--max-items may only be specified once/]
+  ];
+
+  for (const [args, expected] of cases) {
+    const result = spawnSync('node', ['bin/agent-context-pruner.js', ...args], { encoding: 'utf8' });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, expected);
+    assert.doesNotMatch(result.stderr, /ENOENT|missing-transcript/);
+    assert.equal(result.stdout, '');
+  }
+});
+
+test('requires help and version commands to be standalone', () => {
+  const cases = [
+    [['--help', 'missing-transcript.md'], /--help must be used alone/],
+    [['-h', '--format', 'json'], /-h must be used alone/],
+    [['--version', 'missing-transcript.md'], /--version must be used alone/],
+    [['-v', '--max-items', '2'], /-v must be used alone/],
+    [['--version', '--help'], /--version must be used alone/]
+  ];
+
+  for (const [args, expected] of cases) {
+    const result = spawnSync('node', ['bin/agent-context-pruner.js', ...args], { encoding: 'utf8' });
+
+    assert.equal(result.status, 1);
+    assert.match(result.stderr, expected);
+    assert.doesNotMatch(result.stderr, /ENOENT|missing-transcript/);
+    assert.equal(result.stdout, '');
+  }
+});
