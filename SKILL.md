@@ -37,8 +37,11 @@ The CLI grammar is:
 agent-context-pruner <input-file> [--format json|markdown] [--max-items n]
 ```
 
-Both options require an explicit value, and `--max-items` must be a positive
-integer.
+Both options require an explicit value and may be supplied only once;
+`--max-items` must be a positive integer. Use `--help`/`-h` or
+`--version`/`-v` as a standalone command, never with a filename, another
+option, or each other. The CLI validates the complete invocation before it
+reads the input file.
 
 ## Validation
 

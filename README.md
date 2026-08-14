@@ -28,8 +28,11 @@ Each JSON message must be an object. Scalar rows such as strings, numbers, or
 `null` are rejected with the row number so malformed exports can be corrected
 without silently losing content.
 
-`--format` and `--max-items` require explicit values. Unknown options are
-rejected rather than treated as input filenames.
+`--format` and `--max-items` each require an explicit value and may be supplied
+only once. Unknown options are rejected rather than treated as input filenames.
+The metadata commands `--help`/`-h` and `--version`/`-v` must be used alone;
+combining either one with a filename, another option, or each other is an error.
+All argument validation happens before the input file is read.
 
 ## Example
 
