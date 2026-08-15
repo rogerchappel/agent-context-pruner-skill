@@ -36,11 +36,14 @@ function parseJsonTranscript(text, source) {
 }
 
 function parseJsonlTranscript(text, source) {
-  const rows = text.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+  const rows = text.split(/\r?\n/)
+    .map((line, index) => ({ line, position: index + 1 }))
+    .filter(({ line }) => line.trim())
+    .map(({ line, position }) => ({ row: JSON.parse(line), position }));
   return {
     source,
     format: 'jsonl',
-    messages: rows.map((row, index) => normalizeMessage(row, index, 'JSONL transcript'))
+    messages: rows.map(({ row, position }) => normalizeMessage(row, position - 1, 'JSONL transcript'))
   };
 }
 
@@ -63,10 +66,18 @@ function normalizeMessage(row, index, context) {
   if (!row || typeof row !== 'object' || Array.isArray(row)) {
     throw new Error(`${context} row ${index + 1} must be an object`);
   }
+  const contentField = ['content', 'text', 'message']
+    .find((field) => Object.hasOwn(row, field));
+  if (!contentField) {
+    throw new Error(`${context} row ${index + 1} must contain a textual content, text, or message field`);
+  }
+  if (typeof row[contentField] !== 'string') {
+    throw new Error(`${context} row ${index + 1} field ${contentField} must be a string`);
+  }
   return {
     id: String(row.id || row.message_id || `m${index + 1}`),
     role: String(row.role || row.author || row.type || 'note'),
-    content: String(row.content || row.text || row.message || ''),
+    content: row[contentField],
     timestamp: row.timestamp || row.created_at
   };
 }
