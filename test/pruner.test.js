@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
 import { findSensitiveSpans, redactText } from '../src/redaction.js';
@@ -213,5 +215,28 @@ test('rejects unknown CLI options consistently', () => {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /Unknown option: --unknown/);
     assert.equal(result.stdout, '');
+  }
+});
+
+test('CLI reports invalid message content for JSON arrays, wrappers, and JSONL', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'context-pruner-content-'));
+  const cases = [
+    ['array.json', '[{"content":12}]', /JSON transcript row 1 field content must be a string/],
+    ['wrapper.json', '{"messages":[{"role":"user"}]}', /JSON transcript row 1 must contain a textual content/],
+    ['messages.jsonl', '{"text":"ok"}\n{"message":null}\n', /JSONL transcript row 2 field message must be a string/]
+  ];
+
+  try {
+    for (const [name, input, expected] of cases) {
+      const file = join(directory, name);
+      writeFileSync(file, input);
+      const result = spawnSync('node', ['bin/agent-context-pruner.js', file], { encoding: 'utf8' });
+
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, expected);
+      assert.equal(result.stdout, '');
+    }
+  } finally {
+    rmSync(directory, { recursive: true });
   }
 });
