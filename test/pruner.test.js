@@ -57,12 +57,51 @@ test('rejects unsupported JSON and JSONL message rows with stable errors', () =>
     ['{"messages":[null]}', /JSON transcript row 1 must be an object/],
     ['{"messages":[42]}', /JSON transcript row 1 must be an object/],
     ['{"messages":["text"]}', /JSON transcript row 1 must be an object/],
-    ['{"role":"user"}\nnull', /JSONL transcript row 2 must be an object/]
+    ['{"role":"user","content":"first"}\nnull', /JSONL transcript row 2 must be an object/]
   ];
 
   for (const [input, expected] of cases) {
     assert.throws(() => parseTranscript(input), expected);
   }
+});
+
+test('requires textual content fields in JSON arrays and wrapper objects', () => {
+  const cases = [
+    ['[{"role":"user"}]', 'JSON transcript row 1 must contain a textual content, text, or message field'],
+    ['{"messages":[{"content":null}]}', 'JSON transcript row 1 field content must be a string'],
+    ['{"items":[{"text":false}]}', 'JSON transcript row 1 field text must be a string'],
+    ['[{"message":42}]', 'JSON transcript row 1 field message must be a string'],
+    ['[{"content":{}}]', 'JSON transcript row 1 field content must be a string'],
+    ['[{"content":[]}]', 'JSON transcript row 1 field content must be a string']
+  ];
+
+  for (const [input, message] of cases) {
+    assert.throws(() => parseTranscript(input), { message });
+  }
+});
+
+test('requires textual content fields in JSONL rows with physical line positions', () => {
+  const input = [
+    '{"content":"first"}',
+    '',
+    '{"role":"assistant"}',
+    '{"message":true}'
+  ].join('\n');
+
+  assert.throws(
+    () => parseTranscript(input),
+    { message: 'JSONL transcript row 3 must contain a textual content, text, or message field' }
+  );
+});
+
+test('preserves intentionally empty and whitespace-only message strings', () => {
+  const transcript = parseTranscript(JSON.stringify([
+    { content: '' },
+    { text: '   ' },
+    { message: '\t' }
+  ]));
+
+  assert.deepEqual(transcript.messages.map(({ content }) => content), ['', '   ', '\t']);
 });
 
 test('redacts sk-proj secrets from JSON and Markdown reports', () => {
