@@ -48,17 +48,32 @@ function parseJsonlTranscript(text, source) {
 }
 
 function parseMarkdownTranscript(raw, source) {
-  const blocks = raw.split(/\n(?=#{1,6}\s|\*\*[^*]+:\*\*)/g).filter((block) => block.trim());
-  const messages = blocks.length ? blocks : raw.split(/\n{2,}/).filter((block) => block.trim());
+  const boundaries = new Set([0, raw.length]);
+
+  for (const match of raw.matchAll(/\r?\n(?=#{1,6}\s|\*\*[^*\r\n]+:\*\*)|(?:\r?\n){2,}/g)) {
+    boundaries.add(match.index + match[0].length);
+  }
+
+  const offsets = [...boundaries].sort((left, right) => left - right);
+  const messages = offsets.slice(0, -1).flatMap((start, index) => {
+    const segment = raw.slice(start, offsets[index + 1]);
+    const leadingWhitespace = segment.match(/^\s*/)[0].length;
+    const content = segment.trim();
+    if (!content) return [];
+
+    const contentOffset = start + leadingWhitespace;
+    return [{
+      id: `m${index + 1}`,
+      role: inferRole(content),
+      content,
+      line: lineNumberAt(raw, contentOffset)
+    }];
+  }).map((message, index) => ({ ...message, id: `m${index + 1}` }));
+
   return {
     source,
     format: 'markdown',
-    messages: messages.map((content, index) => ({
-      id: `m${index + 1}`,
-      role: inferRole(content),
-      content: content.trim(),
-      line: lineNumberFor(raw, content)
-    }))
+    messages
   };
 }
 
@@ -104,7 +119,7 @@ function inferRole(content) {
   return 'note';
 }
 
-function lineNumberFor(raw, needle) {
-  const before = raw.slice(0, raw.indexOf(needle));
+function lineNumberAt(raw, offset) {
+  const before = raw.slice(0, offset);
   return before ? before.split(/\r?\n/).length : 1;
 }

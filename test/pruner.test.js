@@ -19,6 +19,65 @@ test('parses markdown and flags keep, verify, and redact items', () => {
   assert.match(toMarkdownReport(report), /Continuation Brief/);
 });
 
+test('parses blank-line-separated Markdown transcript paragraphs', () => {
+  const transcript = parseTranscript([
+    'User: Decision: keep the local branch.',
+    '',
+    'Assistant: Next action: run the tests.'
+  ].join('\n'));
+
+  assert.deepEqual(transcript.messages, [
+    { id: 'm1', role: 'user', content: 'User: Decision: keep the local branch.', line: 1 },
+    { id: 'm2', role: 'assistant', content: 'Assistant: Next action: run the tests.', line: 3 }
+  ]);
+});
+
+test('preserves heading-style Markdown boundaries', () => {
+  const transcript = parseTranscript('## User\nKeep this\n## Assistant\nVerify that');
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'assistant', line: 3 }
+  ]);
+});
+
+test('tracks repeated Markdown content by source offset', () => {
+  const transcript = parseTranscript('User: same\n\nUser: same\n\nAssistant: done');
+
+  assert.deepEqual(transcript.messages.map(({ content, line }) => ({ content, line })), [
+    { content: 'User: same', line: 1 },
+    { content: 'User: same', line: 3 },
+    { content: 'Assistant: done', line: 5 }
+  ]);
+});
+
+test('parses CRLF Markdown paragraphs with correct roles and lines', () => {
+  const transcript = parseTranscript('User: first\r\n\r\nTool: result\r\n\r\nAssistant: last');
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'tool', line: 3 },
+    { role: 'assistant', line: 5 }
+  ]);
+});
+
+test('parses mixed heading and paragraph Markdown boundaries', () => {
+  const transcript = parseTranscript([
+    '# User',
+    'Choose the stable API.',
+    '',
+    '**Tool:** inspected the package',
+    '## Assistant',
+    'Implement the focused fix.'
+  ].join('\n'));
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'tool', line: 4 },
+    { role: 'assistant', line: 5 }
+  ]);
+});
+
 test('parses JSONL transcript logs', () => {
   const raw = readFileSync('test/fixtures/transcript.jsonl', 'utf8');
   const report = pruneTranscript(parseTranscript(raw, 'fixture.jsonl'));
