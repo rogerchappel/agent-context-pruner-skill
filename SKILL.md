@@ -5,12 +5,13 @@ Use this skill when an agent needs to continue from a long transcript, automatio
 ## Required Inputs
 
 - A local markdown transcript, a JSON array/object containing message objects,
-  or a JSONL file with one message object per line
+  or a JSONL file with one message object per line (one-record files included)
 - The desired report format, either `json` or `markdown`
 
 Every JSON or JSONL message object must provide a string-valued `content`,
 `text`, or `message` field. Empty and whitespace-only strings are preserved.
 Missing fields and null, boolean, numeric, object, or array bodies are invalid.
+Malformed JSONL is reported using its physical row number, counting blank rows.
 
 ## Tools
 

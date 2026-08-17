@@ -22,12 +22,14 @@ Supported inputs:
 - Markdown notes or transcripts
 - JSON arrays of message objects
 - JSON objects with a `messages` or `items` array of message objects
-- JSONL logs with one message object per line
+- JSONL logs with one message object per line, including a one-record log
 
 Each JSON message must be an object with a string-valued `content`, `text`, or
 `message` field. Empty and whitespace-only strings are accepted as intentional
 content. Missing fields and null, boolean, numeric, object, or array values are
 rejected with the transcript format and row position in the error.
+Malformed JSONL reports the physical row number, including intervening blank
+lines, so diagnostics match the source file.
 
 Markdown entries may start with ATX headings (`## User`) or bold role labels
 (`**Assistant:**`), and entries without those delimiters are separated by a
