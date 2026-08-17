@@ -24,9 +24,25 @@ Supported inputs:
 - JSON objects with a `messages` or `items` array of message objects
 - JSONL logs with one message object per line
 
-Each JSON message must be an object. Scalar rows such as strings, numbers, or
-`null` are rejected with the row number so malformed exports can be corrected
-without silently losing content.
+Each JSON message must be an object with a string-valued `content`, `text`, or
+`message` field. Empty and whitespace-only strings are accepted as intentional
+content. Missing fields and null, boolean, numeric, object, or array values are
+rejected with the transcript format and row position in the error.
+
+Markdown entries may start with ATX headings (`## User`) or bold role labels
+(`**Assistant:**`), and entries without those delimiters are separated by a
+blank line. These boundary styles can be mixed; for example:
+
+```markdown
+## User
+Keep the stable API.
+
+Tool: package metadata inspected
+**Assistant:** Run the release checks next.
+```
+
+A blank line therefore starts a new entry rather than a second paragraph in
+the preceding entry.
 
 `--format` and `--max-items` each require an explicit value and may be supplied
 only once. Unknown options are rejected rather than treated as input filenames.

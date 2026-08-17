@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { parseTranscript } from '../src/parser.js';
 import { pruneTranscript } from '../src/pruner.js';
 import { findSensitiveSpans, redactText } from '../src/redaction.js';
@@ -15,6 +17,65 @@ test('parses markdown and flags keep, verify, and redact items', () => {
   assert.equal(report.counts.redact, 1);
   assert.ok(report.counts.keep >= 1);
   assert.match(toMarkdownReport(report), /Continuation Brief/);
+});
+
+test('parses blank-line-separated Markdown transcript paragraphs', () => {
+  const transcript = parseTranscript([
+    'User: Decision: keep the local branch.',
+    '',
+    'Assistant: Next action: run the tests.'
+  ].join('\n'));
+
+  assert.deepEqual(transcript.messages, [
+    { id: 'm1', role: 'user', content: 'User: Decision: keep the local branch.', line: 1 },
+    { id: 'm2', role: 'assistant', content: 'Assistant: Next action: run the tests.', line: 3 }
+  ]);
+});
+
+test('preserves heading-style Markdown boundaries', () => {
+  const transcript = parseTranscript('## User\nKeep this\n## Assistant\nVerify that');
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'assistant', line: 3 }
+  ]);
+});
+
+test('tracks repeated Markdown content by source offset', () => {
+  const transcript = parseTranscript('User: same\n\nUser: same\n\nAssistant: done');
+
+  assert.deepEqual(transcript.messages.map(({ content, line }) => ({ content, line })), [
+    { content: 'User: same', line: 1 },
+    { content: 'User: same', line: 3 },
+    { content: 'Assistant: done', line: 5 }
+  ]);
+});
+
+test('parses CRLF Markdown paragraphs with correct roles and lines', () => {
+  const transcript = parseTranscript('User: first\r\n\r\nTool: result\r\n\r\nAssistant: last');
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'tool', line: 3 },
+    { role: 'assistant', line: 5 }
+  ]);
+});
+
+test('parses mixed heading and paragraph Markdown boundaries', () => {
+  const transcript = parseTranscript([
+    '# User',
+    'Choose the stable API.',
+    '',
+    '**Tool:** inspected the package',
+    '## Assistant',
+    'Implement the focused fix.'
+  ].join('\n'));
+
+  assert.deepEqual(transcript.messages.map(({ role, line }) => ({ role, line })), [
+    { role: 'user', line: 1 },
+    { role: 'tool', line: 4 },
+    { role: 'assistant', line: 5 }
+  ]);
 });
 
 test('parses JSONL transcript logs', () => {
@@ -57,12 +118,51 @@ test('rejects unsupported JSON and JSONL message rows with stable errors', () =>
     ['{"messages":[null]}', /JSON transcript row 1 must be an object/],
     ['{"messages":[42]}', /JSON transcript row 1 must be an object/],
     ['{"messages":["text"]}', /JSON transcript row 1 must be an object/],
-    ['{"role":"user"}\nnull', /JSONL transcript row 2 must be an object/]
+    ['{"role":"user","content":"first"}\nnull', /JSONL transcript row 2 must be an object/]
   ];
 
   for (const [input, expected] of cases) {
     assert.throws(() => parseTranscript(input), expected);
   }
+});
+
+test('requires textual content fields in JSON arrays and wrapper objects', () => {
+  const cases = [
+    ['[{"role":"user"}]', 'JSON transcript row 1 must contain a textual content, text, or message field'],
+    ['{"messages":[{"content":null}]}', 'JSON transcript row 1 field content must be a string'],
+    ['{"items":[{"text":false}]}', 'JSON transcript row 1 field text must be a string'],
+    ['[{"message":42}]', 'JSON transcript row 1 field message must be a string'],
+    ['[{"content":{}}]', 'JSON transcript row 1 field content must be a string'],
+    ['[{"content":[]}]', 'JSON transcript row 1 field content must be a string']
+  ];
+
+  for (const [input, message] of cases) {
+    assert.throws(() => parseTranscript(input), { message });
+  }
+});
+
+test('requires textual content fields in JSONL rows with physical line positions', () => {
+  const input = [
+    '{"content":"first"}',
+    '',
+    '{"role":"assistant"}',
+    '{"message":true}'
+  ].join('\n');
+
+  assert.throws(
+    () => parseTranscript(input),
+    { message: 'JSONL transcript row 3 must contain a textual content, text, or message field' }
+  );
+});
+
+test('preserves intentionally empty and whitespace-only message strings', () => {
+  const transcript = parseTranscript(JSON.stringify([
+    { content: '' },
+    { text: '   ' },
+    { message: '\t' }
+  ]));
+
+  assert.deepEqual(transcript.messages.map(({ content }) => content), ['', '   ', '\t']);
 });
 
 test('redacts sk-proj secrets from JSON and Markdown reports', () => {
@@ -209,5 +309,28 @@ test('requires help and version commands to be standalone', () => {
     assert.match(result.stderr, expected);
     assert.doesNotMatch(result.stderr, /ENOENT|missing-transcript/);
     assert.equal(result.stdout, '');
+  }
+});
+
+test('CLI reports invalid message content for JSON arrays, wrappers, and JSONL', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'context-pruner-content-'));
+  const cases = [
+    ['array.json', '[{"content":12}]', /JSON transcript row 1 field content must be a string/],
+    ['wrapper.json', '{"messages":[{"role":"user"}]}', /JSON transcript row 1 must contain a textual content/],
+    ['messages.jsonl', '{"text":"ok"}\n{"message":null}\n', /JSONL transcript row 2 field message must be a string/]
+  ];
+
+  try {
+    for (const [name, input, expected] of cases) {
+      const file = join(directory, name);
+      writeFileSync(file, input);
+      const result = spawnSync('node', ['bin/agent-context-pruner.js', file], { encoding: 'utf8' });
+
+      assert.equal(result.status, 1);
+      assert.match(result.stderr, expected);
+      assert.equal(result.stdout, '');
+    }
+  } finally {
+    rmSync(directory, { recursive: true });
   }
 });

@@ -8,6 +8,10 @@ Use this skill when an agent needs to continue from a long transcript, automatio
   or a JSONL file with one message object per line
 - The desired report format, either `json` or `markdown`
 
+Every JSON or JSONL message object must provide a string-valued `content`,
+`text`, or `message` field. Empty and whitespace-only strings are preserved.
+Missing fields and null, boolean, numeric, object, or array bodies are invalid.
+
 ## Tools
 
 - Local shell with Node.js 18 or newer

@@ -36,26 +36,44 @@ function parseJsonTranscript(text, source) {
 }
 
 function parseJsonlTranscript(text, source) {
-  const rows = text.split(/\r?\n/).filter(Boolean).map((line) => JSON.parse(line));
+  const rows = text.split(/\r?\n/)
+    .map((line, index) => ({ line, position: index + 1 }))
+    .filter(({ line }) => line.trim())
+    .map(({ line, position }) => ({ row: JSON.parse(line), position }));
   return {
     source,
     format: 'jsonl',
-    messages: rows.map((row, index) => normalizeMessage(row, index, 'JSONL transcript'))
+    messages: rows.map(({ row, position }) => normalizeMessage(row, position - 1, 'JSONL transcript'))
   };
 }
 
 function parseMarkdownTranscript(raw, source) {
-  const blocks = raw.split(/\n(?=#{1,6}\s|\*\*[^*]+:\*\*)/g).filter((block) => block.trim());
-  const messages = blocks.length ? blocks : raw.split(/\n{2,}/).filter((block) => block.trim());
+  const boundaries = new Set([0, raw.length]);
+
+  for (const match of raw.matchAll(/\r?\n(?=#{1,6}\s|\*\*[^*\r\n]+:\*\*)|(?:\r?\n){2,}/g)) {
+    boundaries.add(match.index + match[0].length);
+  }
+
+  const offsets = [...boundaries].sort((left, right) => left - right);
+  const messages = offsets.slice(0, -1).flatMap((start, index) => {
+    const segment = raw.slice(start, offsets[index + 1]);
+    const leadingWhitespace = segment.match(/^\s*/)[0].length;
+    const content = segment.trim();
+    if (!content) return [];
+
+    const contentOffset = start + leadingWhitespace;
+    return [{
+      id: `m${index + 1}`,
+      role: inferRole(content),
+      content,
+      line: lineNumberAt(raw, contentOffset)
+    }];
+  }).map((message, index) => ({ ...message, id: `m${index + 1}` }));
+
   return {
     source,
     format: 'markdown',
-    messages: messages.map((content, index) => ({
-      id: `m${index + 1}`,
-      role: inferRole(content),
-      content: content.trim(),
-      line: lineNumberFor(raw, content)
-    }))
+    messages
   };
 }
 
@@ -63,10 +81,18 @@ function normalizeMessage(row, index, context) {
   if (!row || typeof row !== 'object' || Array.isArray(row)) {
     throw new Error(`${context} row ${index + 1} must be an object`);
   }
+  const contentField = ['content', 'text', 'message']
+    .find((field) => Object.hasOwn(row, field));
+  if (!contentField) {
+    throw new Error(`${context} row ${index + 1} must contain a textual content, text, or message field`);
+  }
+  if (typeof row[contentField] !== 'string') {
+    throw new Error(`${context} row ${index + 1} field ${contentField} must be a string`);
+  }
   return {
     id: String(row.id || row.message_id || `m${index + 1}`),
     role: String(row.role || row.author || row.type || 'note'),
-    content: String(row.content || row.text || row.message || ''),
+    content: row[contentField],
     timestamp: row.timestamp || row.created_at
   };
 }
@@ -93,7 +119,7 @@ function inferRole(content) {
   return 'note';
 }
 
-function lineNumberFor(raw, needle) {
-  const before = raw.slice(0, raw.indexOf(needle));
+function lineNumberAt(raw, offset) {
+  const before = raw.slice(0, offset);
   return before ? before.split(/\r?\n/).length : 1;
 }
