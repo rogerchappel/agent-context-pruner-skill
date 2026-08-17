@@ -18,6 +18,7 @@ function packageVersion() {
 
 function parseArgs(argv) {
   const args = { file: null, format: 'json', maxItems: 12 };
+  const seenOptions = new Set();
   const optionValue = (index, option) => {
     const value = argv[index + 1];
     if (value === undefined || value.startsWith('-')) {
@@ -29,13 +30,27 @@ function parseArgs(argv) {
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--help' || value === '-h') {
+      if (argv.length !== 1) {
+        throw new Error(`${value} must be used alone`);
+      }
       args.help = true;
     } else if (value === '--version' || value === '-v') {
+      if (argv.length !== 1) {
+        throw new Error(`${value} must be used alone`);
+      }
       args.version = true;
     } else if (value === '--format') {
+      if (seenOptions.has(value)) {
+        throw new Error(`${value} may only be specified once`);
+      }
+      seenOptions.add(value);
       args.format = optionValue(index, value);
       index += 1;
     } else if (value === '--max-items') {
+      if (seenOptions.has(value)) {
+        throw new Error(`${value} may only be specified once`);
+      }
+      seenOptions.add(value);
       args.maxItems = Number(optionValue(index, value));
       index += 1;
     } else if (value.startsWith('-')) {

@@ -44,8 +44,11 @@ Tool: package metadata inspected
 A blank line therefore starts a new entry rather than a second paragraph in
 the preceding entry.
 
-`--format` and `--max-items` require explicit values. Unknown options are
-rejected rather than treated as input filenames.
+`--format` and `--max-items` each require an explicit value and may be supplied
+only once. Unknown options are rejected rather than treated as input filenames.
+The metadata commands `--help`/`-h` and `--version`/`-v` must be used alone;
+combining either one with a filename, another option, or each other is an error.
+All argument validation happens before the input file is read.
 
 ## Example
 
