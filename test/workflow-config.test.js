@@ -27,7 +27,7 @@ test("one least-privilege release gate covers main and pull requests", async () 
   const [{ source }] = releaseGates;
   assert.match(source, /^on:\s*\n\s+pull_request:\s*\n\s+branches:\s*\[main\]\s*\n\s+push:\s*\n\s+branches:\s*\[main\]/m);
   assert.match(source, /^permissions:\s*\n\s+contents:\s*read\s*$/m);
-  assert.match(source, /strategy:\s*\n\s+fail-fast:\s*false\s*\n\s+matrix:\s*\n\s+node-version:\s*\[20, 22\]/m);
+  assert.match(source, /strategy:\s*\n\s+fail-fast:\s*false\s*\n\s+matrix:\s*\n\s+node-version:\s*\[18, 20, 22\]/m);
   assert.equal(
     (source.match(/run:\s*npm run release:check\s*$/gm) ?? []).length,
     1,
