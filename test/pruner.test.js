@@ -85,6 +85,31 @@ test('parses JSONL transcript logs', () => {
   assert.equal(report.counts.verify, 1);
 });
 
+test('parses a single JSONL message object', () => {
+  const transcript = parseTranscript(
+    '{"role":"user","content":"Decision: keep the stable API."}\n',
+    'single.jsonl'
+  );
+
+  assert.equal(transcript.format, 'jsonl');
+  assert.equal(transcript.messages.length, 1);
+  assert.equal(transcript.messages[0].role, 'user');
+  assert.equal(transcript.messages[0].content, 'Decision: keep the stable API.');
+});
+
+test('reports the physical row for malformed JSONL', () => {
+  const input = [
+    '{"content":"first"}',
+    '',
+    '{"content":"broken"'
+  ].join('\n');
+
+  assert.throws(
+    () => parseTranscript(input),
+    { message: 'JSONL transcript row 3 is not valid JSON' }
+  );
+});
+
 test('parses JSON message arrays', () => {
   const report = pruneTranscript(parseTranscript(JSON.stringify([
     { role: 'user', content: 'Decision: preserve branch release-candidate/demo.' },
@@ -330,6 +355,32 @@ test('CLI reports invalid message content for JSON arrays, wrappers, and JSONL',
       assert.match(result.stderr, expected);
       assert.equal(result.stdout, '');
     }
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test('CLI accepts one-record JSONL and reports malformed physical rows', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'context-pruner-jsonl-'));
+  const validFile = join(directory, 'single.jsonl');
+  const invalidFile = join(directory, 'malformed.jsonl');
+
+  try {
+    writeFileSync(validFile, '{"role":"user","content":"Decision: keep the stable API."}\n');
+    writeFileSync(invalidFile, '{"content":"first"}\n\n{"content":"broken"\n');
+
+    const valid = spawnSync('node', ['bin/agent-context-pruner.js', validFile, '--format', 'json'], {
+      encoding: 'utf8'
+    });
+    const invalid = spawnSync('node', ['bin/agent-context-pruner.js', invalidFile], { encoding: 'utf8' });
+
+    assert.equal(valid.status, 0);
+    assert.equal(JSON.parse(valid.stdout).format, 'jsonl');
+    assert.equal(JSON.parse(valid.stdout).counts.total, 1);
+    assert.equal(valid.stderr, '');
+    assert.equal(invalid.status, 1);
+    assert.match(invalid.stderr, /JSONL transcript row 3 is not valid JSON/);
+    assert.equal(invalid.stdout, '');
   } finally {
     rmSync(directory, { recursive: true });
   }
