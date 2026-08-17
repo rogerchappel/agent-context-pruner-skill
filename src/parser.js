@@ -39,7 +39,13 @@ function parseJsonlTranscript(text, source) {
   const rows = text.split(/\r?\n/)
     .map((line, index) => ({ line, position: index + 1 }))
     .filter(({ line }) => line.trim())
-    .map(({ line, position }) => ({ row: JSON.parse(line), position }));
+    .map(({ line, position }) => {
+      try {
+        return { row: JSON.parse(line), position };
+      } catch {
+        throw new Error(`JSONL transcript row ${position} is not valid JSON`);
+      }
+    });
   return {
     source,
     format: 'jsonl',
@@ -98,17 +104,22 @@ function normalizeMessage(row, index, context) {
 }
 
 function looksLikeJsonl(text) {
-  const lines = text.split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return false;
+  const lines = text.split(/\r?\n/).filter((line) => line.trim());
   if (!lines[0].trim().startsWith('{')) return false;
-  return lines.every((line) => {
+
+  try {
+    const parsed = JSON.parse(text);
+    return Boolean(parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      && ['content', 'text', 'message'].some((field) => Object.hasOwn(parsed, field)));
+  } catch {
+    if (lines.length < 2) return false;
     try {
-      JSON.parse(line);
+      JSON.parse(lines[0]);
       return true;
     } catch {
-      return false;
+      return lines.every((line) => line.trim().startsWith('{'));
     }
-  });
+  }
 }
 
 function inferRole(content) {
