@@ -24,6 +24,11 @@ Supported inputs:
 - JSON objects with a `messages` or `items` array of message objects
 - JSONL logs with one message object per line, including a one-record log
 
+Wrapper arrays take precedence over top-level message fields: if a JSON object
+has `messages` or `items`, that array is parsed even when wrapper metadata also
+uses a `content`, `text`, or `message` key. A lone object with a message field
+and no wrapper array remains a supported one-record JSONL transcript.
+
 Each JSON message must be an object with a string-valued `content`, `text`, or
 `message` field. Empty and whitespace-only strings are accepted as intentional
 content. Missing fields and null, boolean, numeric, object, or array values are

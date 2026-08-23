@@ -11,6 +11,9 @@ Use this skill when an agent needs to continue from a long transcript, automatio
 Every JSON or JSONL message object must provide a string-valued `content`,
 `text`, or `message` field. Empty and whitespace-only strings are preserved.
 Missing fields and null, boolean, numeric, object, or array bodies are invalid.
+For JSON wrapper objects, `messages` or `items` takes precedence over any
+top-level `content`, `text`, or `message` metadata. A lone message object with
+no wrapper array is parsed as a supported one-record JSONL transcript.
 Malformed JSONL is reported using its physical row number, counting blank rows.
 
 ## Tools
