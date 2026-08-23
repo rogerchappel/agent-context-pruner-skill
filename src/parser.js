@@ -110,6 +110,7 @@ function looksLikeJsonl(text) {
   try {
     const parsed = JSON.parse(text);
     return Boolean(parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+      && !['messages', 'items'].some((field) => Object.hasOwn(parsed, field))
       && ['content', 'text', 'message'].some((field) => Object.hasOwn(parsed, field)));
   } catch {
     if (lines.length < 2) return false;
