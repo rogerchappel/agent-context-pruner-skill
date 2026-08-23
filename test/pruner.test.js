@@ -129,6 +129,19 @@ test('parses JSON objects with messages or items arrays', () => {
   assert.equal(items.messages[0].content, 'And this');
 });
 
+test('prefers wrapper arrays over colliding message fields', () => {
+  for (const wrapper of [
+    { content: 'metadata', messages: [{ content: 'first' }, { text: 'second' }] },
+    { text: 'metadata', items: [{ message: 'first' }, { content: 'second' }] },
+    { message: 'metadata', messages: [{ content: 'first' }, { content: 'second' }] }
+  ]) {
+    const transcript = parseTranscript(JSON.stringify(wrapper));
+
+    assert.equal(transcript.format, 'json');
+    assert.deepEqual(transcript.messages.map(({ content }) => content), ['first', 'second']);
+  }
+});
+
 test('rejects JSON objects without a message array', () => {
   for (const input of ['{}', '{"metadata":{"count":4}}']) {
     assert.throws(
@@ -381,6 +394,34 @@ test('CLI accepts one-record JSONL and reports malformed physical rows', () => {
     assert.equal(invalid.status, 1);
     assert.match(invalid.stderr, /JSONL transcript row 3 is not valid JSON/);
     assert.equal(invalid.stdout, '');
+  } finally {
+    rmSync(directory, { recursive: true });
+  }
+});
+
+test('CLI reports every wrapper message when metadata collides with message keys', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'context-pruner-wrapper-'));
+  const file = join(directory, 'wrapper.json');
+
+  try {
+    writeFileSync(file, JSON.stringify({
+      content: 'wrapper metadata',
+      messages: [
+        { role: 'user', content: 'Decision: keep the stable API.' },
+        { role: 'assistant', content: 'Follow-up message.' }
+      ]
+    }));
+    const result = spawnSync('node', ['bin/agent-context-pruner.js', file, '--format', 'json'], {
+      encoding: 'utf8'
+    });
+
+    assert.equal(result.status, 0);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.format, 'json');
+    assert.equal(report.counts.total, 2);
+    assert.match(result.stdout, /Follow-up message/);
+    assert.doesNotMatch(result.stdout, /wrapper metadata/);
+    assert.equal(result.stderr, '');
   } finally {
     rmSync(directory, { recursive: true });
   }
