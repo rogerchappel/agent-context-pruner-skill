@@ -110,6 +110,21 @@ test('reports the physical row for malformed JSONL', () => {
   );
 });
 
+test('preserves leading blank rows when parsing JSONL positions', () => {
+  const valid = parseTranscript('\n\n{"content":"first"}\n\n{"content":"second"}\n');
+
+  assert.equal(valid.format, 'jsonl');
+  assert.deepEqual(valid.messages.map(({ id, content }) => ({ id, content })), [
+    { id: 'm3', content: 'first' },
+    { id: 'm5', content: 'second' }
+  ]);
+
+  assert.throws(
+    () => parseTranscript('\n\n{"content":"first"}\n\n{"content":"broken"\n'),
+    { message: 'JSONL transcript row 5 is not valid JSON' }
+  );
+});
+
 test('parses JSON message arrays', () => {
   const report = pruneTranscript(parseTranscript(JSON.stringify([
     { role: 'user', content: 'Decision: preserve branch release-candidate/demo.' },
@@ -379,8 +394,8 @@ test('CLI accepts one-record JSONL and reports malformed physical rows', () => {
   const invalidFile = join(directory, 'malformed.jsonl');
 
   try {
-    writeFileSync(validFile, '{"role":"user","content":"Decision: keep the stable API."}\n');
-    writeFileSync(invalidFile, '{"content":"first"}\n\n{"content":"broken"\n');
+    writeFileSync(validFile, '\n\n{"role":"user","content":"Decision: keep the stable API."}\n');
+    writeFileSync(invalidFile, '\n\n{"content":"first"}\n\n{"content":"broken"\n');
 
     const valid = spawnSync('node', ['bin/agent-context-pruner.js', validFile, '--format', 'json'], {
       encoding: 'utf8'
@@ -392,7 +407,7 @@ test('CLI accepts one-record JSONL and reports malformed physical rows', () => {
     assert.equal(JSON.parse(valid.stdout).counts.total, 1);
     assert.equal(valid.stderr, '');
     assert.equal(invalid.status, 1);
-    assert.match(invalid.stderr, /JSONL transcript row 3 is not valid JSON/);
+    assert.match(invalid.stderr, /JSONL transcript row 5 is not valid JSON/);
     assert.equal(invalid.stdout, '');
   } finally {
     rmSync(directory, { recursive: true });
