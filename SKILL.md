@@ -14,7 +14,8 @@ Missing fields and null, boolean, numeric, object, or array bodies are invalid.
 For JSON wrapper objects, `messages` or `items` takes precedence over any
 top-level `content`, `text`, or `message` metadata. A lone message object with
 no wrapper array is parsed as a supported one-record JSONL transcript.
-Malformed JSONL is reported using its physical row number, counting blank rows.
+Malformed JSONL is reported using its physical row number, counting leading
+and intervening blank rows.
 
 ## Tools
 

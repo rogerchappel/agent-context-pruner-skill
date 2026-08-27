@@ -33,8 +33,8 @@ Each JSON message must be an object with a string-valued `content`, `text`, or
 `message` field. Empty and whitespace-only strings are accepted as intentional
 content. Missing fields and null, boolean, numeric, object, or array values are
 rejected with the transcript format and row position in the error.
-Malformed JSONL reports the physical row number, including intervening blank
-lines, so diagnostics match the source file.
+Malformed JSONL reports the physical row number, counting leading and
+intervening blank lines so diagnostics match the source file exactly.
 
 Markdown entries may start with ATX headings (`## User`) or bold role labels
 (`**Assistant:**`), and entries without those delimiters are separated by a
