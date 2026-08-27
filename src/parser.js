@@ -4,7 +4,7 @@ export function parseTranscript(raw, source = '<input>') {
     return { source, format: 'empty', messages: [] };
   }
   if (looksLikeJsonl(text)) {
-    return parseJsonlTranscript(text, source);
+    return parseJsonlTranscript(raw, source);
   }
   if (text.startsWith('[') || text.startsWith('{')) {
     return parseJsonTranscript(text, source);
