@@ -28,7 +28,7 @@ jobs:
           node-version: ${{ matrix.node-version }}
 
       - name: Install package metadata
-        run: npm install --package-lock=false
+        run: npm ci
 
       - name: Run release gate
         run: npm run release:check
